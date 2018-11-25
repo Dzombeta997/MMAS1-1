@@ -1,0 +1,102 @@
+// Podesavanje pinova LCD-a
+sbit LCD_RS at RD2_bit;
+sbit LCD_EN at RD3_bit;
+sbit LCD_D4 at RD4_bit;
+sbit LCD_D5 at RD5_bit;
+sbit LCD_D6 at RD6_bit;
+sbit LCD_D7 at RD7_bit;
+
+sbit LCD_RS_Direction at TRISD2_bit;
+sbit LCD_EN_Direction at TRISD3_bit;
+sbit LCD_D4_Direction at TRISD4_bit;
+sbit LCD_D5_Direction at TRISD5_bit;
+sbit LCD_D6_Direction at TRISD6_bit;
+sbit LCD_D7_Direction at TRISD7_bit;
+
+bit flag1, flag2, flag3, flag4;
+
+void ispis(char* txt1, int ch ){
+              char txt[15];
+              float adc;
+              
+              Lcd_Cmd(_LCD_CLEAR);           // Brisanje podataka sa displeja
+              Lcd_Out(1,1,txt1);             // Ispis na LCD
+              adc = ADC_Read(ch)*5.0/1023;   // Ocitavanje vrednosti sa drugog kanala
+                                             // Primetiti da je stavljeno 5.0 da se to nije odradilo
+                                             // Kompajler bi tretirao broj kao int, i konstantno pisao 0.00V
+                                             // Na taj nacin se obezbedjuje da se operacije izvrse kao float
+              sprintf(txt,"%.2f V",adc);    // Konverzija iz float vrednsosti u string u formatu "x.xx V"
+              Lcd_Out(2,1,txt);             // Ispis konvertovane vrednosti
+              
+
+              if(0.5 <= adc && adc< 1.5){
+                      PORTC = 0x01;
+                      }
+              else if(1.5 <= adc && adc < 2.5){
+                      PORTC = 0x03;
+                      }
+              else if(2.5 <= adc && adc < 3.5){
+                      PORTC = 0x07;
+                      }
+              else if(3.5 <= adc && adc < 4.5){
+                      PORTC = 0x0F;
+                      }
+              else if(4.5 <= adc && adc <= 5.0){
+                      PORTC = 0x1F;
+                      }
+              else{
+                      PORTC = 0x00;
+                      }
+}
+
+void main(){
+
+  PORTA = 0x0F;
+  ADCON1 |= 0x0B;                    // Podesavanje AN0,AN1,AN2 i AN3 pina kao analognog
+  CMCON  |= 7;                       // Iskljucivanje komparatora
+
+  Lcd_Init();                        // Inicijalizacija LCD-a
+  Lcd_Cmd(_LCD_CLEAR);               // Brisanje podataka sa displeja
+  Lcd_Cmd(_LCD_CURSOR_OFF);          // Iskljucivanje kursora
+  flag1=0;
+  flag2=0;
+  flag3=0;
+  flag4=0;
+  TRISC=0x00;
+  
+  while(1) {                         // Beskonacna petlja
+  if(Button(&PORTB,0,1,1) && !flag1){
+             flag1=1;
+  }
+  if(Button(&PORTB,0,1,0) && flag1){
+             ispis("NAPON KANALA1",0);
+             flag1=0;
+  }
+  
+  if(Button(&PORTB,1,1,1) && !flag2){
+             flag2=1;
+  }
+    if(Button(&PORTB,1,1,0) && flag2){
+             ispis("NAPON KANALA2",1);
+             flag2=0;
+  }
+  
+  if(Button(&PORTB,2,1,1) && !flag3){
+             flag3=1;
+  }
+  
+    if(Button(&PORTB,2,1,0) && flag3){
+              ispis("NAPON KANALA3",2);
+              flag3=0;
+  }
+  
+  if(Button(&PORTB,3,1,1) && !flag4){
+             flag4=1;
+  }
+  
+    if(Button(&PORTB,3,1,0) && flag4){
+             ispis("NAPON KANALA4",3);
+             flag4=0;
+  }
+}
+}
